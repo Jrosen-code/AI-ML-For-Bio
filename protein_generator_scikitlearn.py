@@ -18,7 +18,7 @@ def generate_random_protein_seq(length):
 # Generate a list of protein sequences
 protein_seqs = [generate_random_protein_seq(3) for _ in range(5)]
 
-#Making Patient Dataset Generator Function
+# Patient Dataset Generator Function
 
 def gen_patient_dataset():
     healthySick = ["PD", "PRCR"]
@@ -28,15 +28,14 @@ def gen_patient_dataset():
     for _ in range(10):
         prognosis = rand.choice(healthySick)  # Randomly assign a prognosis
         randID= rand.randint(1, 100)
-        protCount= rand.randint(0, 10000)
 
         # Create a dictionary for the patient record
         patient_record = {
             'ID': randID,
             'Pathology': prognosis,
-           protein_seqs[0] : protCount,
-           protein_seqs[1] : protCount,
-           protein_seqs[2] : protCount
+           protein_seqs[0] : rand.randint(1, 1000),
+           protein_seqs[1] : rand.randint(1, 1000),
+           protein_seqs[2] : rand.randint(1, 1000)
         }
         
         data.append(patient_record)  # Append to the dataset
@@ -49,7 +48,7 @@ def gen_patient_dataset():
 # Generate the dataset
 patient_dataset = gen_patient_dataset()
 
-# This will display the DataFrame in the console
+# Print patient Df for reference 
 print(patient_dataset)
 
 # Encode the Pathology column into binary form 
@@ -59,72 +58,76 @@ patient_dataset['Pathology'] = label_encoder.fit_transform(patient_dataset['Path
 
 Pathos = patient_dataset["Pathology"]
 Counts = patient_dataset.drop(columns = ["ID", "Pathology"])
-
+# Drop ID column for logistic regression input
 patient_dataset.drop(columns = ["ID"], inplace = True)
 
 
-#Create logistic regression classifier
+# Create logistic regression classifier
+# set X and Y Axes
 X, y = Counts, Pathos   
 
-return_X_y=True
-
+# Initialize model
 model = LogisticRegression(random_state=0).fit(X, y)
 
-
+# Acquire predictions and decode them
 preds = model.predict(X.iloc[:2, :])
-
 predictions = label_encoder.inverse_transform(preds)
 
-
+# Print Predictions & Accuracu
 print("Predictions for the first two rows: ", predictions)
 
 accuracy = model.score(X, y)
 
 print("Model Accuracy: ",accuracy)
 
+#Create Scatter Matrix
 scatter_matrix(X, alpha=0.7, figsize=(10,10), diagonal='hist')
-
-# Predict the probabilities of the positive class
-y_prob = model.predict_proba(X)[:, 1]  # Probability for class 1
-
-# Compute ROC curve and AUC
-fpr, tpr, thresholds = roc_curve(y, y_prob)  # fpr = false positive rate, tpr = true positive rate
-roc_auc = auc(fpr, tpr)  # Calculate the area under the curve (AUC)
-
-# Plot ROC curve
-plt.figure()
-
-plt.plot(fpr, tpr, color="blue", label=f"ROC curve (AUC = {roc_auc:.2f})")
-
-plt.plot([0, 1], [0, 1], color="gray", linestyle="--", label="Chance")  # Diagonal line for random guessing
-
-plt.xlim([0.0, 1.0])
-
-plt.ylim([0.0, 1.05])
-
-plt.xlabel("False Positive Rate")
-
-plt.ylabel("True Positive Rate")
-
-plt.title("Receiver Operating Characteristic (ROC) Curve")
-
-plt.legend(loc="lower right")
-
+plt.suptitle("Scatter Matrix of Protein Sequence Counts")
 plt.show()
 
+def ROC_curve_create(model, X, y):
+    #Function to plot ROC curve
+    
+    # Predict the probabilities of the positive class
+    y_prob = model.predict_proba(X)[:, 1]  # Probability for class 1
 
-# Create Confusion Matrix Display
+    # Compute ROC curve and AUC
+    # fpr = false positive rate, tpr = true positive rate
+    fpr, tpr, thresholds = roc_curve(y, y_prob)  
+    # Calculate the area under the curve (AUC)
+    roc_auc = auc(fpr, tpr)  
 
-ConfusionMatrixDisplay.from_estimator(
-    estimator=model,         # Your trained logistic regression model
-    X=X,                     # The features (input data)
-    y=y,                     # The true labels
-    display_labels=["PD", "PRCR"],  # Optional: Display labels for each class
-    cmap="viridis",          # Color map for the matrix
-    colorbar=True            # Display a colorbar alongside the matrix
-)
+    # Plot ROC curve
+    plt.figure()
+    plt.plot(fpr, tpr, color="blue", label=f"ROC curve (AUC = {roc_auc:.2f})")
+    plt.plot([0, 1], [0, 1], color="gray", linestyle="--", label="Chance")
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("Receiver Operating Characteristic (ROC) Curve")
+    plt.legend(loc="lower right")
+    plt.show()
 
-# Show the plot
-plt.title("Confusion Matrix Display for Logistic Regression Model")
-plt.show()
+ROC_curve_create(model, X, y)
+
+def Confusion_matrix_create(model, X, y, display_labels= ["PD", "PRCR"]):
+    # Create Confusion Matrix Display
+    ConfusionMatrixDisplay.from_estimator(
+        estimator=model,         # Your trained logistic regression model
+        X=X,                     # The features (input data)
+        y=y,                     # The true labels
+        display_labels= display_labels,  # Display labels for each class
+        cmap="viridis",          # Color map for the matrix
+        colorbar=True            # Display a colorbar alongside the matrix
+        )
+    # Set custom axis labels
+    plt.xlabel("Predicted Class")
+    plt.ylabel("True Class")
+    # Print Confusion Matrix
+    plt.title("Confusion Matrix Display for Logistic Regression Model")
+    plt.show()
+
+Confusion_matrix_create(model, X, y, ["PD", "PRCR"])
+
 

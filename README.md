@@ -53,4 +53,4 @@ The project employs logistic regression for binary classification, using the fol
 Ensure you have the required libraries installed:
 
 ```bash
-pip install numpy pandas matplotlib scikit-learn
+pip install pandas matplotlib scikit-learn
